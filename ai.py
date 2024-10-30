@@ -44,11 +44,7 @@ def ask_ai(profile, user_question):
     except Exception as e:
         return f"An unexpected error occurred: {str(e)}"
 
-def get_macros(profile_data, goals):
-    # Assuming you need `macro.json.scpt` here
-    with open("macro.json.scpt", "r", encoding="utf-8") as f:
-        macro_data = json.load(f)
-    # Use `macro_data` as needed within your function
+
 
 
 def get_macros(profile, goals):

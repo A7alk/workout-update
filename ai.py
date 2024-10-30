@@ -57,7 +57,10 @@ def get_macros(profile, goals):
     # Run the AI macro generation
     response = run_flow("", tweaks=TWEAKS, application_token=APPLICATION_TOKEN)
     
-    # Ensure a consistent return structure
+    # Debug: Print the AI response to check structure
+    print("AI Response in get_macros:", response)
+
+    # Ensure a consistent return structure with default values if necessary
     if isinstance(response, dict) and "data" in response:
         return {
             "calories": response["data"].get("calories", 0),
@@ -109,7 +112,3 @@ def run_flow(message: str,
         print(f"Error parsing response: {e}")
         print(f"Response data: {data}")  # Log full response for troubleshooting
         return "Error: Unable to retrieve macro data."
-
-
-
-

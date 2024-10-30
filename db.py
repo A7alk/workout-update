@@ -7,6 +7,8 @@ load_dotenv()
 
 ENDPOINT = os.getenv("ASTRA_ENDPOINT")
 TOKEN = os.getenv("ASTRA_DB_APPLICATION_TOKEN")
+ENDPOINT = "https://your-database-id-us-east1.apps.astra.datastax.com/api/rest/v2/keyspaces"
+
 
 
 @st.cache_resource

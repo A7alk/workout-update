@@ -1,9 +1,13 @@
-from langflow.load import run_flow_from_json
+import streamlit as st
+from ai import ask_ai, get_macros
+from profiles import create_profile, get_notes, get_profile
+from form_submit import update_personal_info, add_note, delete_note
 from dotenv import load_dotenv
 import requests
-from typing import Optional
 import json
 import os
+
+st.title("Personal Fitness Tool")
 
 load_dotenv()
 
@@ -33,69 +37,201 @@ def dict_to_string(obj, level=0):
     return ", ".join(strings)
 
 
-def ask_ai(profile, user_question):
-    try:
-        # Ensure the file name matches your uploaded file exactly
-        result = run_flow_from_json(flow="askai.json.scpt",
-                                    inputs={"profile": profile, "question": user_question})
-        return result
-    except FileNotFoundError:
-        return "Error: The required JSON file 'askai.json.scpt' is missing."
-    except Exception as e:
-        return f"An unexpected error occurred: {str(e)}"
+@st.fragment()
+def personal_data_form():
+    with st.form("personal_data"):
+        st.header("Personal Data")
+
+        profile = st.session_state.profile
+
+        name = st.text_input("Name", value=profile["general"]["name"])
+        age = st.number_input(
+            "Age", min_value=1, max_value=120, step=1, value=profile["general"]["age"]
+        )
+        weight = st.number_input(
+            "Weight (kg)",
+            min_value=0.0,
+            max_value=300.0,
+            step=0.1,
+            value=float(profile["general"]["weight"]),
+        )
+        height = st.number_input(
+            "Height (cm)",
+            min_value=0.0,
+            max_value=250.0,
+            step=0.1,
+            value=float(profile["general"]["height"]),
+        )
+        genders = ["Male", "Female", "Other"]
+        gender = st.radio(
+            "Gender", genders, genders.index(profile["general"].get("gender", "Male"))
+        )
+        activities = (
+            "Sedentary",
+            "Lightly Active",
+            "Moderately Active",
+            "Very Active",
+            "Super Active",
+        )
+        activity_level = st.selectbox(
+            "Activity Level",
+            activities,
+            index=activities.index(
+                profile["general"].get("activity_level", "Sedentary")
+            ),
+        )
+
+        personal_data_submit = st.form_submit_button("Save")
+        if personal_data_submit:
+            if all([name, age, weight, height, gender, activity_level]):
+                with st.spinner():
+                    st.session_state.profile = update_personal_info(
+                        profile,
+                        "general",
+                        name=name,
+                        weight=weight,
+                        height=height,
+                        gender=gender,
+                        age=age,
+                        activity_level=activity_level,
+                    )
+                    st.success("Information saved.")
+            else:
+                st.warning("Please fill in all of the data!")
 
 
-def get_macros(profile, goals):
-    TWEAKS = {
-        "TextInput-PR5Jb": {
-            "input_value": ", ".join(goals)
-        },
-        "TextInput-PrfY9": {
-            "input_value": dict_to_string(profile)
-        }
-    }
-    return run_flow("", tweaks=TWEAKS, application_token=APPLICATION_TOKEN)
+@st.fragment()
+def goals_form():
+    profile = st.session_state.profile
+    with st.form("goals_form"):
+        st.header("Goals")
+        goals = st.multiselect(
+            "Select your Goals",
+            ["Muscle Gain", "Fat Loss", "Stay Active"],
+            default=profile.get("goals", ["Muscle Gain"]),
+        )
+
+        goals_submit = st.form_submit_button("Save")
+        if goals_submit:
+            if goals:
+                with st.spinner():
+                    st.session_state.profile = update_personal_info(
+                        profile, "goals", goals=goals
+                    )
+                    st.success("Goals updated")
+            else:
+                st.warning("Please select at least one goal.")
 
 
-def run_flow(message: str,
-             output_type: str = "chat",
-             input_type: str = "chat",
-             tweaks: Optional[dict] = None,
-             application_token: Optional[str] = None) -> dict:
-    api_url = f"{BASE_API_URL}/lf/{LANGFLOW_ID}/api/v1/run/macros"
-
-    payload = {
-        "input_value": message,
-        "output_type": output_type,
-        "input_type": input_type,
-    }
-    headers = None
-    if tweaks:
-        payload["tweaks"] = tweaks
-    if application_token:
-        headers = {"Authorization": f"Bearer {application_token}", "Content-Type": "application/json"}
+@st.fragment()
+def macros():
+    profile = st.session_state.profile
+    nutrition = st.container()
+    nutrition.header("Macros")
     
-    response = requests.post(api_url, json=payload, headers=headers)
-
-    # Check the response before parsing
-    if response.status_code != 200:
-        print(f"API Error: {response.status_code} - {response.text}")
-        return {"error": "API request failed"}
+    if nutrition.button("Generate with AI"):
+        # Run AI macro generation and update profile with the results
+        result = get_macros(profile.get("general"), profile.get("goals"))
+        profile["nutrition"] = result
+        nutrition.success("AI has generated the results.")
     
-    try:
-        # Log full response for debugging
-        data = response.json()
-        print("API Response:", data)
+    with nutrition.form("nutrition_form", clear_on_submit=False):
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            calories = st.number_input(
+                "Calories",
+                min_value=0,
+                step=1,
+                value=profile["nutrition"].get("calories", 0),
+            )
+        with col2:
+            protein = st.number_input(
+                "Protein",
+                min_value=0,
+                step=1,
+                value=profile["nutrition"].get("protein", 0),
+            )
+        with col3:
+            fat = st.number_input(
+                "Fat",
+                min_value=0,
+                step=1,
+                value=profile["nutrition"].get("fat", 0),
+            )
+        with col4:
+            carbs = st.number_input(
+                "Carbs",
+                min_value=0,
+                step=1,
+                value=profile["nutrition"].get("carbs", 0),
+            )
 
-        # Safely retrieve nested values with `.get()`
-        outputs = data.get("outputs", [{}])
-        if outputs:
-            results_text = outputs[0].get("outputs", [{}])[0].get("results", {}).get("text", {}).get("data", {}).get("text", "No text found")
-            return json.loads(results_text)
-        else:
-            return "Error: No outputs found in API response."
-    except (KeyError, IndexError, TypeError, json.JSONDecodeError) as e:
-        print(f"Error parsing response: {e}")
-        print(f"Response data: {data}")  # Log full response for troubleshooting
-        return "Error: Unable to retrieve macro data."
+        if st.form_submit_button("Save"):
+            # Update the profile with the values from the form
+            with st.spinner():
+                st.session_state.profile = update_personal_info(
+                    profile,
+                    "nutrition",
+                    protein=protein,
+                    calories=calories,
+                    fat=fat,
+                    carbs=carbs,
+                )
+                st.success("Information saved")
+
+
+@st.fragment()
+def notes():
+    st.subheader("Notes: ")
+    for i, note in enumerate(st.session_state.notes):
+        cols = st.columns([5, 1])
+        with cols[0]:
+            st.text(note.get("text"))
+        with cols[1]:
+            if st.button("Delete", key=i):
+                delete_note(note.get("_id"))
+                st.session_state.notes.pop(i)
+                st.rerun()
+    
+    new_note = st.text_input("Add a new note: ")
+    if st.button("Add Note"):
+        if new_note:
+            note = add_note(new_note, st.session_state.profile_id)
+            st.session_state.notes.append(note)
+            st.rerun()
+
+
+@st.fragment()
+def ask_ai_func():
+    st.subheader('Ask AI')
+    user_question = st.text_input("Ask AI a question: ")
+    if st.button("Ask AI"):
+        with st.spinner():
+            result = ask_ai(st.session_state.profile, user_question)
+            st.write(result)
+
+
+def forms():
+    if "profile" not in st.session_state:
+        profile_id = 1
+        profile = get_profile(profile_id)
+        if not profile:
+            profile_id, profile = create_profile(profile_id)
+
+        st.session_state.profile = profile
+        st.session_state.profile_id = profile_id
+
+    if "notes" not in st.session_state:
+        st.session_state.notes = get_notes(st.session_state.profile_id)
+
+    personal_data_form()
+    goals_form()
+    macros()
+    notes()
+    ask_ai_func()
+
+
+if __name__ == "__main__":
+    forms()
+
 

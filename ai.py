@@ -35,8 +35,8 @@ def dict_to_string(obj, level=0):
 
 def ask_ai(profile, user_question):
     try:
-        # Call without the `inputs` parameter
-        result = run_flow_from_json(flow="askai.json.scpt")
+        # Pass the user_question as the required `input_value`
+        result = run_flow_from_json(flow="askai.json.scpt", input_value=user_question)
         return result
     except FileNotFoundError:
         return "Error: The required JSON file 'askai.json.scpt' is missing."
@@ -112,4 +112,3 @@ def run_flow(message: str,
         print(f"Error parsing response: {e}")
         print(f"Response data: {data}")  # Log full response for troubleshooting
         return "Error: Unable to retrieve macro data."
-

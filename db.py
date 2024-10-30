@@ -5,12 +5,20 @@ import os
 
 load_dotenv()
 
-# Fetch endpoint and token, ensuring they are set
+
+os.environ["ASTRA_ENDPOINT"] =  "https://65d57f4b-7859-4de5-b03e-49a4a2df901c-us-east-2.apps.astra.datastax.com"
+os.environ["ASTRA_DB_APPLICATION_TOKEN"] = "AstraCS:WWyBcesTMHMkdjbvyFRzlNQj:a6942c077116610d183d3a16dff02be22985bdda44c8378c71d9ffed0fce2192"
+
+# Now attempt to load them with os.getenv to see if the error persists
 ENDPOINT = os.getenv("ASTRA_ENDPOINT")
 TOKEN = os.getenv("ASTRA_DB_APPLICATION_TOKEN")
 
 if not ENDPOINT or not TOKEN:
     raise ValueError("Missing ASTRA_ENDPOINT or ASTRA_DB_APPLICATION_TOKEN environment variables.")
+
+
+# Fetch endpoint and token, ensuring they are set
+
 
 @st.cache_resource
 def get_db():

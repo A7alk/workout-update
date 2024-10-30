@@ -5,6 +5,48 @@ from typing import Optional
 import json
 import os
 
+import json
+
+def run_flow(flow, tweaks, application_token):
+    response = some_api_request(flow, tweaks, application_token)  # Assuming this sends your API request
+    data = response.json()
+    try:
+        # Safely retrieve nested values with `.get()` and handle potential structure issues
+        outputs = data.get("outputs", [{}])
+        if outputs:
+            results_text = outputs[0].get("outputs", [{}])[0].get("results", {}).get("text", {}).get("data", {}).get("text", "No text found")
+            return json.loads(results_text)
+        else:
+            return "Error: No outputs found in API response."
+    except (KeyError, IndexError, TypeError, json.JSONDecodeError) as e:
+        print(f"Error parsing response: {e}")
+        print(f"Response data: {data}")  # Log full response for troubleshooting
+        return "Error: Unable to retrieve macro data."
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 load_dotenv()
 
 BASE_API_URL = "https://api.langflow.astra.datastax.com"

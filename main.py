@@ -95,14 +95,15 @@ def goals_form():
 @st.fragment()
 def macros():
     profile = st.session_state.profile
-    nutrition = st.container(border=True)
+    nutrition = st.container()
     nutrition.header("Macros")
+    
     if nutrition.button("Generate with AI"):
         result = get_macros(profile.get("general"), profile.get("goals"))
         profile["nutrition"] = result
         nutrition.success("AI has generated the results.")
 
-    with nutrition.form("nutrition_form", border=False):
+    with nutrition.form("nutrition_form"):
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             calories = st.number_input(
@@ -145,6 +146,7 @@ def macros():
                 )
                 st.success("Information saved")
 
+
 @st.fragment()
 def notes():
     st.subheader("Notes: ")
@@ -165,6 +167,7 @@ def notes():
             st.session_state.notes.append(note)
             st.rerun()
 
+
 @st.fragment()
 def ask_ai_func():
     st.subheader('Ask AI')
@@ -173,6 +176,7 @@ def ask_ai_func():
         with st.spinner():
             result = ask_ai(st.session_state.profile, user_question)
             st.write(result)
+
 
 def forms():
     if "profile" not in st.session_state:

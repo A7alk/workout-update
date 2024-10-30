@@ -1,13 +1,8 @@
-import streamlit as st
-from ai import ask_ai, get_macros
-from profiles import create_profile, get_notes, get_profile
-from form_submit import update_personal_info, add_note, delete_note
+from langflow.load import run_flow_from_json
 from dotenv import load_dotenv
 import requests
 import json
 import os
-
-st.title("Personal Fitness Tool")
 
 load_dotenv()
 

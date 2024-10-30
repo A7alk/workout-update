@@ -8,7 +8,7 @@ import os
 load_dotenv()
 
 BASE_API_URL = "https://api.langflow.astra.datastax.com"
-LANGFLOW_ID = "34c16f5c-70e4-4bb6-9c51-89a41a653efd"
+LANGFLOW_ID = "0230cce6-f2c0-4ab4-877a-a1911b63d67e"
 APPLICATION_TOKEN = os.getenv("LANGFLOW_TOKEN")
 
 
@@ -43,7 +43,7 @@ def ask_ai(profile, question):
         },
     }
 
-    result = run_flow_from_json(flow="AskAIV2.json",
+    result = run_flow_from_json(flow="askai.json.scpt",
                                 input_value="message",
                                 fallback_to_env_vars=True,
                                 tweaks=TWEAKS)

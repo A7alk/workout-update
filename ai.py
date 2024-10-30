@@ -33,22 +33,18 @@ def dict_to_string(obj, level=0):
     return ", ".join(strings)
 
 
-def ask_ai(profile, question):
-    TWEAKS = {
-        "TextInput-XjIKI": {
-            "input_value": question
-        },
-        "TextInput-176Ns": {
-            "input_value": dict_to_string(profile)
-        },
-    }
+def ask_ai(profile, user_question):
+    try:
+        # Updated to the exact filename you uploaded
+        result = run_flow_from_json(flow="askai.json.scpt",
+                                    inputs={"profile": profile, "question": user_question})
+        return result
+    except FileNotFoundError:
+        return "Error: The required JSON file 'askai.json.scpt' is missing."
+    except Exception as e:
+        return f"An unexpected error occurred: {str(e)}"
 
-    result = run_flow_from_json(flow="askai.json.scpt",
-                                input_value="message",
-                                fallback_to_env_vars=True,
-                                tweaks=TWEAKS)
 
-    return result[0].outputs[0].results["text"].data["text"]
 
 
 def get_macros(profile, goals):

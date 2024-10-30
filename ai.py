@@ -35,7 +35,6 @@ def dict_to_string(obj, level=0):
 
 def ask_ai(profile, user_question):
     try:
-        # Ensure the file name matches your uploaded file exactly
         result = run_flow_from_json(flow="askai.json.scpt",
                                     inputs={"profile": profile, "question": user_question})
         return result
@@ -54,7 +53,21 @@ def get_macros(profile, goals):
             "input_value": dict_to_string(profile)
         }
     }
-    return run_flow("", tweaks=TWEAKS, application_token=APPLICATION_TOKEN)
+    
+    # Run the AI macro generation
+    response = run_flow("", tweaks=TWEAKS, application_token=APPLICATION_TOKEN)
+    
+    # Ensure a consistent return structure
+    if isinstance(response, dict) and "data" in response:
+        return {
+            "calories": response["data"].get("calories", 0),
+            "protein": response["data"].get("protein", 0),
+            "fat": response["data"].get("fat", 0),
+            "carbs": response["data"].get("carbs", 0)
+        }
+    else:
+        # Default values if AI response is unexpected
+        return {"calories": 0, "protein": 0, "fat": 0, "carbs": 0}
 
 
 def run_flow(message: str,
@@ -83,11 +96,9 @@ def run_flow(message: str,
         return {"error": "API request failed"}
     
     try:
-        # Log full response for debugging
         data = response.json()
         print("API Response:", data)
 
-        # Safely retrieve nested values with `.get()`
         outputs = data.get("outputs", [{}])
         if outputs:
             results_text = outputs[0].get("outputs", [{}])[0].get("results", {}).get("text", {}).get("data", {}).get("text", "No text found")
@@ -98,6 +109,7 @@ def run_flow(message: str,
         print(f"Error parsing response: {e}")
         print(f"Response data: {data}")  # Log full response for troubleshooting
         return "Error: Unable to retrieve macro data."
+
 
 
 
